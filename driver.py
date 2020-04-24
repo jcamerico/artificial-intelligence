@@ -20,7 +20,14 @@ class Frontier(object):
     def __init__(self):
         self.full_states = []
         self.reduced_states = set()
+        self.costs = []
 
+    def cheapest(self):
+        min_cost_index = self.get_min_cost_index()
+        next_state = self.full_states.pop(min_cost_index)        
+        self.costs.pop(min_cost_index)
+        return next_state
+    
     def next(self):
         next_state = self.full_states.pop(0)        
         self.reduced_states.discard(next_state.config)
@@ -38,8 +45,22 @@ class Frontier(object):
         self.full_states.insert(0, state)
         self.reduced_states.add(state.config)
 
+    def append_with_cost(self, state):
+        self.full_states.append(state)
+        self.reduced_states.add(state.config)
+        self.costs.append(calculate_total_cost(state))
+
     def size(self):
         return len(self.full_states)
+
+    def get_min_cost_index(self):
+        min_cost = -1
+        min_index = -1
+        for index, cost in enumerate(self.costs):
+            if min_index == -1 or cost < min_cost:
+                min_index = index
+                min_cost = cost
+        return min_index                
 
 ## The Class that Represents the Puzzle
 class PuzzleState(object):
@@ -196,19 +217,45 @@ def dfs_search(initial_state):
 
 def A_star_search(initial_state):
     """A * search"""
-    ### STUDENT CODE GOES HERE ###
-    print('TODO')
+    start_time = time.time()
+    goal = tuple([i for i in range(initial_state.dimension * initial_state.dimension)])
+    visited_states = set()
+    frontier = Frontier()
+    frontier.append_with_cost(initial_state)
+    max_depth = initial_state.cost
+    while frontier.size() > 0:
+        current_state = frontier.cheapest()        
+                
+        if (current_state.config == goal):
+            writeOutput(current_state, len(visited_states), max_depth, time.time() - start_time)
+            return
 
+        else:
+            visited_states.add(current_state.config)
+            children = current_state.expand()
+            for child in children:
+                if child.config not in visited_states and not frontier.contains(child):
+                    if (child.cost > max_depth):
+                        max_depth = child.cost
+                    frontier.append_with_cost(child)
 
 def calculate_total_cost(state):
     """calculate the total estimated cost of a state"""
-    ### STUDENT CODE GOES HERE ###
-    print('TODO')
+    cost = state.cost
+    for i, item in enumerate(state.config): 
+        cost += calculate_manhattan_dist(i, item, state.n)
+    return cost
 
 def calculate_manhattan_dist(idx, value, n):
     """calculate the manhattan distance of a tile"""
-    ### STUDENT CODE GOES HERE ###
-    print('TODO')
+    if value == 0 or idx == value:
+        return 0
+    else:
+        current_row = idx // n
+        target_row = value // n
+        current_col = idx % n
+        target_col = value % n
+        return abs(target_row - current_row) + abs(target_col - current_col)
 
 # Main Function that reads in Input and Runs corresponding Algorithm
 def main():
